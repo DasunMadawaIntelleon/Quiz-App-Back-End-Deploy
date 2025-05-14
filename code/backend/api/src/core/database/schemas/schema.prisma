@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int          @id @default(autoincrement())
+  user_name      String       @unique 
+  name           String?
+  password       String
+  role           UserRole
+
+  UserQuiz    UserQuiz[]
+  UserQuizQuestion    UserQuizQuestion[]
+}
+
+model Quiz {
+  id             String       @id @default(uuid())
+  start_date_time DateTime
+  end_date_time   DateTime
+  description     String
+  estimated_count Int
+  is_visible      Boolean
+
+  UserQuiz    UserQuiz[]
+  QuizQuestion  QuizQuestion[]
+  UserQuizQuestion    UserQuizQuestion[]
+}
+
+model Question {
+  id             String          @id @default(uuid())
+  question       String
+  a              String
+  b              String
+  c              String?
+  d              String?
+  active         Boolean
+  question_type  QuestionType
+  section        QuestionSection
+
+  QuizQuestion  QuizQuestion[]
+  QuestionAnswer QuestionAnswer[]
+  UserQuizQuestion    UserQuizQuestion[]
+}
+
+model QuestionAnswer {
+  question_id String
+  answer      Answer
+
+  Question    Question @relation(fields: [question_id], references: [id])
+  @@id([question_id, answer])
+}
+
+model QuizQuestion {
+  quiz_id     String
+  question_id String
+  question_number Int
+
+  Quiz        Quiz    @relation(fields: [quiz_id], references: [id])
+  Question    Question @relation(fields: [question_id], references: [id])
+  @@id([quiz_id, question_id])
+}
+
+
+model UserQuizQuestion {
+  question_number Int
+  user_name    String
+  quiz_id     String
+  question_id String
+  is_correct  UserAnswerStatus
+
+  User        User    @relation(fields: [user_name], references: [user_name])
+  Quiz        Quiz    @relation(fields: [quiz_id], references: [id])
+  Question    Question @relation(fields: [question_id], references: [id])
+  @@id([user_name, quiz_id, question_id])
+
+  UserAnswers UserAnswer[]
+}
+
+model UserQuiz {
+  quiz_id   String
+  user_name  String
+   is_submitted Boolean
+
+  Quiz     Quiz    @relation(fields: [quiz_id], references: [id])
+  User     User    @relation(fields: [user_name], references: [user_name])
+  @@id([quiz_id, user_name])
+}
+
+model UserAnswer {
+  question_number Int
+  user_name String
+  quiz_id  String
+  question_id  String
+  answer                Answer
+
+  UserQuizQuestion    UserQuizQuestion @relation(fields: [user_name,quiz_id,question_id], references: [user_name, quiz_id, question_id])
+  @@id([user_name,quiz_id,question_id,answer])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum QuestionType {
+  MULTIPLE_ANSWERS
+  TRUE_FALSE
+  NORMAL
+}
+
+enum QuestionSection {
+  TECHNICAL
+  CRITICAL
+  OTHER
+}
+
+enum Answer {
+  A
+  B
+  C
+  D
+}
+
+enum UserAnswerStatus {
+  CORRECT
+  WRONG
+  EMPTY
+}
